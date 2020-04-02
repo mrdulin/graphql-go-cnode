@@ -1,11 +1,12 @@
 package schema
 
 import (
-	"encoding/json"
 	"fmt"
+	"net/url"
 	"time"
 
 	"github.com/graphql-go/graphql"
+	utils "github.com/mrdulin/graphql-go-cnode/utils"
 )
 
 type TopicBase struct {
@@ -47,16 +48,29 @@ var TopicType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
-func PrintPretty(x interface{}) {
-	b, err := json.MarshalIndent(x, "", "  ")
+func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
+	base, err := url.Parse("https://cnodejs.org/api/v1/topics")
 	if err != nil {
-		fmt.Println("error:", err)
+		return nil, err
 	}
-	fmt.Print(string(b))
+	urlValues := url.Values{}
+	for k, v := range params.Args {
+		// TODO: validation value
+		fmt.Println("k:", k, "v:", v)
+		urlValues.Add(k, v.(string))
+	}
+	base.RawQuery = urlValues.Encode()
+	fmt.Printf("Encoded URL is %q\n", base.String())
+	body, err := utils.Request(base.String())
+	fmt.Println(body.(utils.Response).Success)
+	if err != nil {
+		return Topic{}, nil
+	}
+	return body.(utils.Response).Data, nil
 }
 
 func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
 	source, _ := p.Source.(map[string]interface{})
-	author, _ := source["author"]
+	author := source["author"]
 	return author, nil
 }
