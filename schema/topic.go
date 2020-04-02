@@ -1,11 +1,14 @@
 package schema
 
 import (
-	"github.com/graphql-go/graphql"
+	"encoding/json"
+	"fmt"
 	"time"
+
+	"github.com/graphql-go/graphql"
 )
 
-type Topic struct {
+type TopicBase struct {
 	ID          string    `json:"id"`
 	AuthorID    string    `json:"author_id"`
 	Tab         string    `json:"tab"`
@@ -17,10 +20,16 @@ type Topic struct {
 	ReplyCount  int       `json:"reply_count"`
 	VisitCount  int       `json:"visit_count"`
 	CreateAt    time.Time `json:"create_at"`
-	Author      struct {
-		Loginname string `json:"loginname"`
-		AvatarURL string `json:"avatar_url"`
-	} `json:"author"`
+}
+
+type Topic struct {
+	TopicBase
+	Author User `json:"author"`
+}
+
+type TopicDetail struct {
+	Topic
+	Replies []Reply `json:"replies"`
 }
 
 var TopicType = graphql.NewObject(graphql.ObjectConfig{
@@ -31,5 +40,23 @@ var TopicType = graphql.NewObject(graphql.ObjectConfig{
 		"tab":       &graphql.Field{Type: graphql.String},
 		"content":   &graphql.Field{Type: graphql.String},
 		"title":     &graphql.Field{Type: graphql.String},
+		"author": &graphql.Field{
+			Type:    UserType,
+			Resolve: AuthorResolver,
+		},
 	},
 })
+
+func PrintPretty(x interface{}) {
+	b, err := json.MarshalIndent(x, "", "  ")
+	if err != nil {
+		fmt.Println("error:", err)
+	}
+	fmt.Print(string(b))
+}
+
+func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
+	source, _ := p.Source.(map[string]interface{})
+	author, _ := source["author"]
+	return author, nil
+}

@@ -59,5 +59,9 @@ var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 				return body.(Response).Data, nil
 			},
 		},
+
+		// "topic": &graphql.Field{
+		// 	Type
+		// },
 	},
 })
