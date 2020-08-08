@@ -15,8 +15,12 @@ var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 			Resolve: TopicsResolver,
 		},
 
-		// "topic": &graphql.Field{
-		// 	Type
-		// },
+		"topic": &graphql.Field{
+			Type: TopicType,
+			Args: graphql.FieldConfigArgument{
+				"id": &graphql.ArgumentConfig{Type: graphql.String},
+			},
+			Resolve: TopicResolver,
+		},
 	},
 })

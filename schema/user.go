@@ -17,3 +17,9 @@ var UserType = graphql.NewObject(graphql.ObjectConfig{
 		"avatar_url": &graphql.Field{Type: graphql.String},
 	},
 })
+
+func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
+	source, _ := p.Source.(map[string]interface{})
+	author := source["author"]
+	return author, nil
+}
