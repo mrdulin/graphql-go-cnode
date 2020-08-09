@@ -1,8 +1,8 @@
 package schema
 
 import (
-	"fmt"
 	"net/url"
+	"strconv"
 
 	"github.com/graphql-go/graphql"
 	utils "github.com/mrdulin/graphql-go-cnode/utils"
@@ -32,13 +32,31 @@ type TopicDetail struct {
 	Replies []Reply `json:"replies"`
 }
 
+type RecentTopic struct {
+	ID          string `json:"id"`
+	Title       string `json:"title"`
+	LastReplyAt string `json:"last_reply_at"`
+	Author      User   `json:"author"`
+}
+
+var TopicTabEnum = graphql.NewEnum(graphql.EnumConfig{
+	Name:        "TopicTab",
+	Description: "The category of topic",
+	Values: graphql.EnumValueConfigMap{
+		"ASK":   &graphql.EnumValueConfig{Value: "ask"},
+		"SHARE": &graphql.EnumValueConfig{Value: "share"},
+		"JOB":   &graphql.EnumValueConfig{Value: "job"},
+		"GOOD":  &graphql.EnumValueConfig{Value: "good"},
+	},
+})
+
 var TopicType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "Topic",
 	Description: "This is topic",
 	Fields: graphql.Fields{
-		"id":            &graphql.Field{Type: graphql.String},
+		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
 		"author_id":     &graphql.Field{Type: graphql.String},
-		"tab":           &graphql.Field{Type: graphql.String},
+		"tab":           &graphql.Field{Type: TopicTabEnum},
 		"content":       &graphql.Field{Type: graphql.String},
 		"title":         &graphql.Field{Type: graphql.String},
 		"last_reply_at": &graphql.Field{Type: graphql.String},
@@ -66,11 +84,17 @@ func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 	urlValues := url.Values{}
 	for k, v := range params.Args {
 		// TODO: validation value
-		fmt.Println("k:", k, "v:", v)
-		urlValues.Add(k, v.(string))
+		var val string
+		switch v := v.(type) {
+		case int:
+			val = strconv.Itoa(v)
+		case string:
+			val = v
+		}
+		urlValues.Add(k, val)
 	}
 	base.RawQuery = urlValues.Encode()
-	body, err := utils.Request(base.String())
+	body, err := utils.RequestGet(base.String())
 	if err != nil {
 		return Topic{}, nil
 	}
@@ -83,7 +107,7 @@ func TopicResolver(params graphql.ResolveParams) (interface{}, error) {
 		return &TopicDetail{}, nil
 	}
 	url := "https://cnodejs.org/api/v1/topic/" + id
-	body, err := utils.Request(url)
+	body, err := utils.RequestGet(url)
 	if err != nil {
 		return &TopicDetail{}, nil
 	}

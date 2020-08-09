@@ -1,12 +1,19 @@
 package main
 
 import (
+	"context"
 	"fmt"
+	"log"
 	"net/http"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 	"github.com/mrdulin/graphql-go-cnode/schema"
+)
+
+const (
+	gqlpath = "/graphql"
+	port    = 3000
 )
 
 func executeQuery(query string, schema graphql.Schema) *graphql.Result {
@@ -20,16 +27,27 @@ func executeQuery(query string, schema graphql.Schema) *graphql.Result {
 	return result
 }
 
+func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
+	auth := r.Header.Get("authorization")
+	return map[string]interface{}{
+		"auth": auth,
+	}
+}
+
 func main() {
 	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
 		Query: schema.RootQuery,
 	})
+
 	h := handler.New(&handler.Config{
-		Schema:   &schema,
-		Pretty:   true,
-		GraphiQL: true,
+		Schema:       &schema,
+		Pretty:       true,
+		GraphiQL:     false,
+		Playground:   true,
+		RootObjectFn: RootObjectFn,
 	})
-	http.Handle("/graphql", h)
-	fmt.Println("Access the web app via browser at 'http://localhost:8080'")
-	http.ListenAndServe(":8080", nil)
+
+	http.Handle(gqlpath, h)
+	fmt.Printf("Access the web app via browser at http://localhost:%d%s", port, gqlpath)
+	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }
