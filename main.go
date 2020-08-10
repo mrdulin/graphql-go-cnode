@@ -6,6 +6,8 @@ import (
 	"log"
 	"net/http"
 
+	svcs "github.com/mrdulin/graphql-go-cnode/services"
+
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 	"github.com/mrdulin/graphql-go-cnode/schema"
@@ -35,8 +37,10 @@ func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
 }
 
 func main() {
+	userService := svcs.NewUserService()
+	services := &svcs.Container{UserService: userService}
 	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Query: schema.RootQuery,
+		Query: schema.NewRootQuery(services).Type,
 	})
 
 	h := handler.New(&handler.Config{

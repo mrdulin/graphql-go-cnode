@@ -5,39 +5,9 @@ import (
 	"strconv"
 
 	"github.com/graphql-go/graphql"
+	"github.com/mrdulin/graphql-go-cnode/models"
 	utils "github.com/mrdulin/graphql-go-cnode/utils"
 )
-
-type TopicBase struct {
-	ID          string `json:"id"`
-	AuthorID    string `json:"author_id"`
-	Tab         string `json:"tab"`
-	Content     string `json:"content"`
-	Title       string `json:"title"`
-	LastReplyAt string `json:"last_reply_at"`
-	Good        bool   `json:"good"`
-	Top         bool   `json:"top"`
-	ReplyCount  int    `json:"reply_count"`
-	VisitCount  int    `json:"visit_count"`
-	CreateAt    string `json:"create_at"`
-}
-
-type Topic struct {
-	TopicBase
-	Author User `json:"author"`
-}
-
-type TopicDetail struct {
-	Topic
-	Replies []Reply `json:"replies"`
-}
-
-type RecentTopic struct {
-	ID          string `json:"id"`
-	Title       string `json:"title"`
-	LastReplyAt string `json:"last_reply_at"`
-	Author      User   `json:"author"`
-}
 
 var TopicTabEnum = graphql.NewEnum(graphql.EnumConfig{
 	Name:        "TopicTab",
@@ -54,7 +24,7 @@ var TopicType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "Topic",
 	Description: "This is topic",
 	Fields: graphql.Fields{
-		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.String)},
+		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
 		"author_id":     &graphql.Field{Type: graphql.String},
 		"tab":           &graphql.Field{Type: TopicTabEnum},
 		"content":       &graphql.Field{Type: graphql.String},
@@ -73,6 +43,17 @@ var TopicType = graphql.NewObject(graphql.ObjectConfig{
 			Type:    graphql.NewList(ReplyType),
 			Resolve: RepliesResolver,
 		},
+	},
+})
+
+var RecentTopicType = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "RecentTopic",
+	Description: "Recent topic of an user",
+	Fields: graphql.Fields{
+		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
+		"title":         &graphql.Field{Type: graphql.String},
+		"last_reply_at": &graphql.Field{Type: graphql.String},
+		"author":        &graphql.Field{Type: UserType},
 	},
 })
 
@@ -96,7 +77,7 @@ func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 	base.RawQuery = urlValues.Encode()
 	body, err := utils.RequestGet(base.String())
 	if err != nil {
-		return Topic{}, nil
+		return &models.Topic{}, nil
 	}
 	return body.(utils.Response).Data, nil
 }
@@ -104,12 +85,12 @@ func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 func TopicResolver(params graphql.ResolveParams) (interface{}, error) {
 	id, ok := params.Args["id"].(string)
 	if !ok {
-		return &TopicDetail{}, nil
+		return &models.TopicDetail{}, nil
 	}
 	url := "https://cnodejs.org/api/v1/topic/" + id
 	body, err := utils.RequestGet(url)
 	if err != nil {
-		return &TopicDetail{}, nil
+		return &models.TopicDetail{}, nil
 	}
 	return body.(utils.Response).Data, nil
 }

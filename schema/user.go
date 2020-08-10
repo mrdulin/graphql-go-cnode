@@ -2,28 +2,10 @@ package schema
 
 import (
 	"github.com/graphql-go/graphql"
+	"github.com/mrdulin/graphql-go-cnode/models"
 	utils "github.com/mrdulin/graphql-go-cnode/utils"
 	"github.com/pkg/errors"
 )
-
-type User struct {
-	Loginname string `json:"loginname"`
-	AvatarURL string `json:"avatar_url"`
-}
-
-type UserDetail struct {
-	User
-	GithubUsername string        `json:"githubUsername"`
-	CreateAt       string        `json:"create_at"`
-	Score          int           `json:"score"`
-	RecentTopics   []RecentTopic `json:"recent_topics"`
-}
-
-type AccessTokenValidation struct {
-	utils.ResponseStatus
-	User
-	ID string `json:"id"`
-}
 
 var UserType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "User",
@@ -45,7 +27,7 @@ var UserDetailType = graphql.NewObject(graphql.ObjectConfig{
 		"githubUsername": &graphql.Field{Type: graphql.String},
 		"create_at":      &graphql.Field{Type: graphql.String},
 		"score":          &graphql.Field{Type: graphql.Int},
-		// TODO: recent_topics
+		"recent_topics":  &graphql.Field{Type: graphql.NewList(RecentTopicType)},
 	},
 })
 
@@ -63,7 +45,7 @@ var AccessTokenValidationType = graphql.NewObject(graphql.ObjectConfig{
 func UserDetailResolver(params graphql.ResolveParams) (interface{}, error) {
 	loginname, ok := params.Args["loginname"].(string)
 	if !ok {
-		return &UserDetail{}, nil
+		return &models.UserDetail{}, nil
 	}
 	url := "https://cnodejs.org/api/v1/user/" + loginname
 	body, err := utils.RequestGet(url)
@@ -82,7 +64,7 @@ func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
 func AccessTokenValidationResolver(p graphql.ResolveParams) (interface{}, error) {
 	accessToken, ok := p.Args["accessToken"].(string)
 	if !ok {
-		return &AccessTokenValidation{}, nil
+		return &models.AccessTokenValidation{}, nil
 	}
 	url := "https://cnodejs.org/api/v1/accesstoken"
 	body, err := utils.RequestPost(url, map[string]interface{}{"accesstoken": accessToken})
