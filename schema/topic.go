@@ -4,67 +4,75 @@ import (
 	"net/url"
 	"strconv"
 
+	"github.com/mrdulin/graphql-go-cnode/utils"
+
 	"github.com/graphql-go/graphql"
 	"github.com/mrdulin/graphql-go-cnode/models"
-	utils "github.com/mrdulin/graphql-go-cnode/utils"
+	"github.com/mrdulin/graphql-go-cnode/services"
 )
 
 var TopicTabEnum = graphql.NewEnum(graphql.EnumConfig{
 	Name:        "TopicTab",
 	Description: "The category of topic",
 	Values: graphql.EnumValueConfigMap{
-		"ASK":   &graphql.EnumValueConfig{Value: "ask"},
-		"SHARE": &graphql.EnumValueConfig{Value: "share"},
-		"JOB":   &graphql.EnumValueConfig{Value: "job"},
-		"GOOD":  &graphql.EnumValueConfig{Value: "good"},
+		"ASK":   &graphql.EnumValueConfig{Value: models.TOPIC_TAB_ASK},
+		"SHARE": &graphql.EnumValueConfig{Value: models.TOPIC_TAB_SHARE},
+		"JOB":   &graphql.EnumValueConfig{Value: models.TOPIC_TAB_JOB},
+		"GOOD":  &graphql.EnumValueConfig{Value: models.TOPIC_TAB_GOOD},
 	},
+})
+
+var TopicBaseFields = graphql.Fields{
+	"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
+	"title":         &graphql.Field{Type: graphql.String},
+	"last_reply_at": &graphql.Field{Type: graphql.String},
+	"author": &graphql.Field{
+		Type:    UserType,
+		Resolve: AuthorResolver,
+	},
+}
+
+var TopicFields = utils.MergeGraphqlFields(TopicBaseFields, graphql.Fields{
+	"author_id":   &graphql.Field{Type: graphql.String},
+	"tab":         &graphql.Field{Type: TopicTabEnum},
+	"content":     &graphql.Field{Type: graphql.String},
+	"good":        &graphql.Field{Type: graphql.Boolean},
+	"top":         &graphql.Field{Type: graphql.Int},
+	"reply_count": &graphql.Field{Type: graphql.Int},
+	"visit_count": &graphql.Field{Type: graphql.Int},
+	"create_at":   &graphql.Field{Type: graphql.String},
 })
 
 var TopicType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "Topic",
 	Description: "This is topic",
-	Fields: graphql.Fields{
-		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
-		"author_id":     &graphql.Field{Type: graphql.String},
-		"tab":           &graphql.Field{Type: TopicTabEnum},
-		"content":       &graphql.Field{Type: graphql.String},
-		"title":         &graphql.Field{Type: graphql.String},
-		"last_reply_at": &graphql.Field{Type: graphql.String},
-		"good":          &graphql.Field{Type: graphql.Boolean},
-		"top":           &graphql.Field{Type: graphql.Int},
-		"reply_count":   &graphql.Field{Type: graphql.Int},
-		"visit_count":   &graphql.Field{Type: graphql.Int},
-		"create_at":     &graphql.Field{Type: graphql.String},
-		"author": &graphql.Field{
-			Type:    UserType,
-			Resolve: AuthorResolver,
-		},
+	Fields:      TopicFields,
+})
+
+var TopicDetailType = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "TopicDetail",
+	Description: "This is topic detail",
+	Fields: utils.MergeGraphqlFields(TopicFields, graphql.Fields{
 		"replies": &graphql.Field{
 			Type:    graphql.NewList(ReplyType),
 			Resolve: RepliesResolver,
 		},
-	},
+	}),
 })
 
 var RecentTopicType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "RecentTopic",
 	Description: "Recent topic of an user",
-	Fields: graphql.Fields{
-		"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
-		"title":         &graphql.Field{Type: graphql.String},
-		"last_reply_at": &graphql.Field{Type: graphql.String},
-		"author":        &graphql.Field{Type: UserType},
-	},
+	Fields:      TopicBaseFields,
 })
 
 func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
-	base, err := url.Parse("https://cnodejs.org/api/v1/topics")
-	if err != nil {
-		return nil, err
-	}
+	rootValue := params.Info.RootValue.(map[string]interface{})
+	container := rootValue["services"].(*services.Container)
+
 	urlValues := url.Values{}
 	for k, v := range params.Args {
-		// TODO: validation value
+		// TODO: validate params
 		var val string
 		switch v := v.(type) {
 		case int:
@@ -74,23 +82,16 @@ func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 		}
 		urlValues.Add(k, val)
 	}
-	base.RawQuery = urlValues.Encode()
-	body, err := utils.RequestGet(base.String())
-	if err != nil {
-		return &models.Topic{}, nil
-	}
-	return body.(utils.Response).Data, nil
+
+	return container.TopicService.GetTopicsByPage(&urlValues), nil
 }
 
 func TopicResolver(params graphql.ResolveParams) (interface{}, error) {
+	rootValue := params.Info.RootValue.(map[string]interface{})
+	container := rootValue["services"].(*services.Container)
 	id, ok := params.Args["id"].(string)
 	if !ok {
 		return &models.TopicDetail{}, nil
 	}
-	url := "https://cnodejs.org/api/v1/topic/" + id
-	body, err := utils.RequestGet(url)
-	if err != nil {
-		return &models.TopicDetail{}, nil
-	}
-	return body.(utils.Response).Data, nil
+	return container.TopicService.GetTopicById(id), nil
 }

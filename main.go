@@ -5,46 +5,59 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+
+	"github.com/joho/godotenv"
 
 	svcs "github.com/mrdulin/graphql-go-cnode/services"
+	"github.com/mrdulin/graphql-go-cnode/utils"
 
 	"github.com/graphql-go/graphql"
 	"github.com/graphql-go/handler"
 	"github.com/mrdulin/graphql-go-cnode/schema"
 )
 
-const (
-	gqlpath = "/graphql"
-	port    = 3000
+var (
+	services   *svcs.Container
+	envFetcher utils.EnvFetcher
+	gqlpath    = "/graphql"
+	port       = 3000
 )
 
-func executeQuery(query string, schema graphql.Schema) *graphql.Result {
-	result := graphql.Do(graphql.Params{
-		Schema:        schema,
-		RequestString: query,
-	})
-	if len(result.Errors) > 0 {
-		fmt.Printf("wrong result, unexpected errors: %v", result.Errors)
+func init() {
+	var err error
+	envFetcher = utils.NewOsEnvFetcher(godotenv.Load)
+	apiBaseUrl := envFetcher.Getenv("API_BASE_URL")
+	userService := svcs.NewUserService(utils.RequestGet, utils.RequestPost, apiBaseUrl)
+	topicService := svcs.NewTopicService(utils.RequestGet, apiBaseUrl)
+	gqlpath = envFetcher.Getenv("GRAPHQL_PATH")
+	port, err = strconv.Atoi(envFetcher.Getenv("PORT"))
+	if err != nil {
+		log.Fatalln("Convert PORT string to int error", err)
 	}
-	return result
+	services = &svcs.Container{UserService: userService, TopicService: topicService}
 }
 
 func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
 	auth := r.Header.Get("authorization")
 	return map[string]interface{}{
-		"auth": auth,
+		"auth":     auth,
+		"services": services,
 	}
 }
 
 func main() {
-	userService := svcs.NewUserService()
-	services := &svcs.Container{UserService: userService}
-	var schema, _ = graphql.NewSchema(graphql.SchemaConfig{
-		Query: schema.NewRootQuery(services).Type,
+
+	graphqlSchema, err := graphql.NewSchema(graphql.SchemaConfig{
+		Query: schema.RootQuery,
 	})
 
+	if err != nil {
+		log.Fatalln(err)
+	}
+
 	h := handler.New(&handler.Config{
-		Schema:       &schema,
+		Schema:       &graphqlSchema,
 		Pretty:       true,
 		GraphiQL:     false,
 		Playground:   true,

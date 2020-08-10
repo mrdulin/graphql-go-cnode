@@ -3,56 +3,49 @@ package schema
 import (
 	"github.com/graphql-go/graphql"
 	"github.com/mrdulin/graphql-go-cnode/models"
-	utils "github.com/mrdulin/graphql-go-cnode/utils"
-	"github.com/pkg/errors"
+	"github.com/mrdulin/graphql-go-cnode/services"
+	"github.com/mrdulin/graphql-go-cnode/utils"
 )
+
+var UserBaseFields = graphql.Fields{
+	"loginname":  &graphql.Field{Type: graphql.String},
+	"avatar_url": &graphql.Field{Type: graphql.String},
+}
 
 var UserType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "User",
 	Description: "This respresents an user",
-	Fields: graphql.Fields{
-		"loginname":  &graphql.Field{Type: graphql.String},
-		"avatar_url": &graphql.Field{Type: graphql.String},
-	},
+	Fields:      UserBaseFields,
 })
 
 var UserDetailType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "UserDetail",
 	Description: "This respresents an user detail",
-	Fields: graphql.Fields{
-		// TODO: reuse fields definition of UserType here
-		"loginname":  &graphql.Field{Type: graphql.String},
-		"avatar_url": &graphql.Field{Type: graphql.String},
-
+	Fields: utils.MergeGraphqlFields(UserBaseFields, graphql.Fields{
 		"githubUsername": &graphql.Field{Type: graphql.String},
 		"create_at":      &graphql.Field{Type: graphql.String},
 		"score":          &graphql.Field{Type: graphql.Int},
 		"recent_topics":  &graphql.Field{Type: graphql.NewList(RecentTopicType)},
-	},
+	}),
 })
 
 var AccessTokenValidationType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "AccessTokenValidation",
 	Description: "The response type for validating accessToken",
-	Fields: graphql.Fields{
-		"id":         &graphql.Field{Type: graphql.ID},
-		"loginname":  &graphql.Field{Type: graphql.String},
-		"avatar_url": &graphql.Field{Type: graphql.String},
-		"success":    &graphql.Field{Type: graphql.Boolean},
-	},
+	Fields: utils.MergeGraphqlFields(UserBaseFields, graphql.Fields{
+		"id":      &graphql.Field{Type: graphql.ID},
+		"success": &graphql.Field{Type: graphql.Boolean},
+	}),
 })
 
 func UserDetailResolver(params graphql.ResolveParams) (interface{}, error) {
+	rootValue := params.Info.RootValue.(map[string]interface{})
+	container := rootValue["services"].(*services.Container)
 	loginname, ok := params.Args["loginname"].(string)
 	if !ok {
 		return &models.UserDetail{}, nil
 	}
-	url := "https://cnodejs.org/api/v1/user/" + loginname
-	body, err := utils.RequestGet(url)
-	if err != nil {
-		return nil, err
-	}
-	return body.(utils.Response).Data, nil
+	return container.UserService.GetUserDetailByLoginname(loginname), nil
 }
 
 func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
@@ -66,10 +59,7 @@ func AccessTokenValidationResolver(p graphql.ResolveParams) (interface{}, error)
 	if !ok {
 		return &models.AccessTokenValidation{}, nil
 	}
-	url := "https://cnodejs.org/api/v1/accesstoken"
-	body, err := utils.RequestPost(url, map[string]interface{}{"accesstoken": accessToken})
-	if err != nil {
-		return nil, errors.Wrap(err, "utils.RequestPost")
-	}
-	return body, nil
+	rootValue := p.Info.RootValue.(map[string]interface{})
+	container := rootValue["services"].(*services.Container)
+	return container.UserService.ValidateAccessToken(accessToken), nil
 }

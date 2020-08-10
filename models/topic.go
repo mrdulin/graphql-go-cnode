@@ -1,5 +1,14 @@
 package models
 
+type TopicTabEnum string
+
+const (
+	TOPIC_TAB_ASK   TopicTabEnum = "ask"
+	TOPIC_TAB_JOB   TopicTabEnum = "job"
+	TOPIC_TAB_GOOD  TopicTabEnum = "good"
+	TOPIC_TAB_SHARE TopicTabEnum = "share"
+)
+
 type TopicBase struct {
 	ID          string `json:"id"`
 	AuthorID    string `json:"author_id"`

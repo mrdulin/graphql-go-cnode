@@ -1,5 +1,6 @@
 package services
 
 type Container struct {
-	UserService UserService
+	UserService  UserService
+	TopicService TopicService
 }

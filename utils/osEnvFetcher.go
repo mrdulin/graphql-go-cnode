@@ -3,22 +3,31 @@ package utils
 import (
 	"log"
 	"os"
-
-	"github.com/joho/godotenv"
 )
 
-// EnvFetcher environment variables fetcher
+const (
+	PRODUCTION string = "production"
+)
+
+// EnvFetcher environment variables fetcher
 type EnvFetcher interface {
 	Getenv(key string) string
 }
 
-type osEnvFetcher struct{}
+type DotenvLoader func(filenames ...string) (err error)
 
-func (f *osEnvFetcher) NewOsEnvFetcher() *osEnvFetcher {
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+type osEnvFetcher struct {
+	dotenvLoader DotenvLoader
+}
+
+func NewOsEnvFetcher(dotenvLoader DotenvLoader) *osEnvFetcher {
+	if os.Getenv("APP_ENV") != PRODUCTION {
+		err := dotenvLoader()
+		if err != nil {
+			log.Fatal("Error loading .env file")
+		}
 	}
+
 	return &osEnvFetcher{}
 }
 
