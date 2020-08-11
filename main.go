@@ -28,8 +28,9 @@ func init() {
 	var err error
 	envFetcher = utils.NewOsEnvFetcher(godotenv.Load)
 	apiBaseUrl := envFetcher.Getenv("API_BASE_URL")
-	userService := svcs.NewUserService(utils.RequestGet, utils.RequestPost, apiBaseUrl)
-	topicService := svcs.NewTopicService(utils.RequestGet, apiBaseUrl)
+	httpClient := utils.HttpClient{}
+	userService := svcs.NewUserService(&httpClient, apiBaseUrl)
+	topicService := svcs.NewTopicService(&httpClient, apiBaseUrl)
 	gqlpath = envFetcher.Getenv("GRAPHQL_PATH")
 	port, err = strconv.Atoi(envFetcher.Getenv("PORT"))
 	if err != nil {

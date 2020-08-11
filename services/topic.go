@@ -9,7 +9,7 @@ import (
 )
 
 type topicService struct {
-	RequestGet utils.RequestGetter
+	HttpClient *utils.HttpClient
 	BaseURL    string
 }
 
@@ -18,8 +18,8 @@ type TopicService interface {
 	GetTopicById(id string) interface{}
 }
 
-func NewTopicService(requestGet utils.RequestGetter, BaseURL string) *topicService {
-	return &topicService{RequestGet: requestGet, BaseURL: BaseURL}
+func NewTopicService(httpClient *utils.HttpClient, BaseURL string) *topicService {
+	return &topicService{HttpClient: httpClient, BaseURL: BaseURL}
 }
 func (t *topicService) GetTopicsByPage(urlValues *url.Values) interface{} {
 	base, err := url.Parse(t.BaseURL + "/topics")
@@ -28,7 +28,7 @@ func (t *topicService) GetTopicsByPage(urlValues *url.Values) interface{} {
 		return &[]models.Topic{}
 	}
 	base.RawQuery = urlValues.Encode()
-	body, err := t.RequestGet(base.String())
+	body, err := t.HttpClient.Get(base.String())
 	if err != nil {
 		fmt.Println("Get topics by page error. reason: http get error.", err)
 		return &[]models.Topic{}
@@ -38,7 +38,7 @@ func (t *topicService) GetTopicsByPage(urlValues *url.Values) interface{} {
 
 func (t *topicService) GetTopicById(id string) interface{} {
 	endpoint := t.BaseURL + "/topic/" + id
-	body, err := t.RequestGet(endpoint)
+	body, err := t.HttpClient.Get(endpoint)
 	if err != nil {
 		fmt.Println("Get topic by Id error.", err)
 		return &models.TopicDetail{}

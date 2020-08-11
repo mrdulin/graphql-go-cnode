@@ -8,9 +8,8 @@ import (
 )
 
 type userService struct {
-	RequestGet  utils.RequestGetter
-	RequestPost utils.RequestPoster
-	BaseURL     string
+	HttpClient utils.IHttpClient
+	BaseURL    string
 }
 
 type UserService interface {
@@ -18,13 +17,13 @@ type UserService interface {
 	ValidateAccessToken(token string) interface{}
 }
 
-func NewUserService(requestGet utils.RequestGetter, RequestPost utils.RequestPoster, BaseURL string) *userService {
-	return &userService{RequestGet: requestGet, RequestPost: RequestPost, BaseURL: BaseURL}
+func NewUserService(httpClient utils.IHttpClient, BaseURL string) *userService {
+	return &userService{HttpClient: httpClient, BaseURL: BaseURL}
 }
 
 func (u *userService) GetUserDetailByLoginname(name string) interface{} {
 	url := u.BaseURL + "/user/" + name
-	body, err := u.RequestGet(url)
+	body, err := u.HttpClient.Get(url)
 	if err != nil {
 		fmt.Println("Get user detail by login name error.", err)
 		return &models.UserDetail{}
@@ -34,7 +33,7 @@ func (u *userService) GetUserDetailByLoginname(name string) interface{} {
 
 func (u *userService) ValidateAccessToken(token string) interface{} {
 	url := u.BaseURL + "/accesstoken"
-	body, err := u.RequestPost(url, map[string]interface{}{"accesstoken": token})
+	body, err := u.HttpClient.Post(url, map[string]interface{}{"accesstoken": token})
 	if err != nil {
 		fmt.Println("Validate access token error.", err)
 		return &models.AccessTokenValidation{}
