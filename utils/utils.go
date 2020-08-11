@@ -20,7 +20,7 @@ type ResponseStatus struct {
 
 type IHttpClient interface {
 	Get(url string) (interface{}, error)
-	Post(url string, body interface{}) (interface{}, error)
+	Post(url string, body interface{}) ([]byte, error)
 }
 
 type HttpClient struct {
@@ -44,7 +44,7 @@ func (h *HttpClient) Get(url string) (interface{}, error) {
 }
 
 // RequestPost send POST HTTP request
-func (h *HttpClient) Post(url string, body interface{}) (interface{}, error) {
+func (h *HttpClient) Post(url string, body interface{}) ([]byte, error) {
 	jsonValue, err := json.Marshal(body)
 	if err != nil {
 		return nil, err
@@ -58,9 +58,12 @@ func (h *HttpClient) Post(url string, body interface{}) (interface{}, error) {
 	if err != nil {
 		return nil, err
 	}
-	var data interface{}
-	json.Unmarshal(respBody, &data)
-	return data, nil
+	//var data interface{}
+	//json.Unmarshal(respBody, &data)
+	//if err != nil {
+	//	return nil, err
+	//}
+	return respBody, nil
 }
 
 // Response cnode API response struct

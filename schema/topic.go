@@ -26,10 +26,6 @@ var TopicBaseFields = graphql.Fields{
 	"id":            &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
 	"title":         &graphql.Field{Type: graphql.String},
 	"last_reply_at": &graphql.Field{Type: graphql.String},
-	"author": &graphql.Field{
-		Type:    UserType,
-		Resolve: AuthorResolver,
-	},
 }
 
 var TopicFields = utils.MergeGraphqlFields(TopicBaseFields, graphql.Fields{
@@ -41,6 +37,16 @@ var TopicFields = utils.MergeGraphqlFields(TopicBaseFields, graphql.Fields{
 	"reply_count": &graphql.Field{Type: graphql.Int},
 	"visit_count": &graphql.Field{Type: graphql.Int},
 	"create_at":   &graphql.Field{Type: graphql.String},
+	"author": &graphql.Field{
+		Type:    UserType,
+		Resolve: AuthorResolver,
+	},
+})
+
+var TopicBaseType = graphql.NewObject(graphql.ObjectConfig{
+	Name:        "TopicBase",
+	Description: "This is base information of a topic",
+	Fields:      TopicBaseFields,
 })
 
 var TopicType = graphql.NewObject(graphql.ObjectConfig{
@@ -53,6 +59,10 @@ var TopicDetailType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "TopicDetail",
 	Description: "This is topic detail",
 	Fields: utils.MergeGraphqlFields(TopicFields, graphql.Fields{
+		"author": &graphql.Field{
+			Type:    UserType,
+			Resolve: AuthorResolver,
+		},
 		"replies": &graphql.Field{
 			Type:    graphql.NewList(ReplyType),
 			Resolve: RepliesResolver,

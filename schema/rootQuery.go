@@ -4,7 +4,7 @@ import (
 	"github.com/graphql-go/graphql"
 )
 
-// RootQuery graphql root query
+// RootQuery root query for every HTTP GET request
 var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 	Name: "RootQuery",
 	Fields: graphql.Fields{
@@ -29,20 +29,21 @@ var RootQuery = graphql.NewObject(graphql.ObjectConfig{
 
 		"user": &graphql.Field{
 			Type:        UserDetailType,
-			Description: "get user detail by login name",
+			Description: "Get user detail by login name",
 			Args: graphql.FieldConfigArgument{
 				"loginname": &graphql.ArgumentConfig{Type: graphql.String},
 			},
 			Resolve: UserDetailResolver,
 		},
 
-		"validateAccessToken": &graphql.Field{
-			Type:        AccessTokenValidationType,
-			Description: "validate accessToken",
+		"messages": &graphql.Field{
+			Type:        MessagesType,
+			Description: "Contain unread and read messages",
 			Args: graphql.FieldConfigArgument{
-				"accessToken": &graphql.ArgumentConfig{Type: graphql.String},
+				"accessToken": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+				"mdrender":    &graphql.ArgumentConfig{Type: graphql.String, DefaultValue: "true"},
 			},
-			Resolve: AccessTokenValidationResolver,
+			Resolve: MessagesResolver,
 		},
 	},
 })

@@ -15,7 +15,7 @@ type UserDetail struct {
 	RecentTopics   []RecentTopic `json:"recent_topics"`
 }
 
-type AccessTokenValidation struct {
+type ValidateAccessTokenResponse struct {
 	utils.ResponseStatus
 	User
 	ID string `json:"id"`

@@ -31,12 +31,17 @@ func init() {
 	httpClient := utils.HttpClient{}
 	userService := svcs.NewUserService(&httpClient, apiBaseUrl)
 	topicService := svcs.NewTopicService(&httpClient, apiBaseUrl)
+	messageService := svcs.NewMessageService(&httpClient, apiBaseUrl)
 	gqlpath = envFetcher.Getenv("GRAPHQL_PATH")
 	port, err = strconv.Atoi(envFetcher.Getenv("PORT"))
 	if err != nil {
 		log.Fatalln("Convert PORT string to int error", err)
 	}
-	services = &svcs.Container{UserService: userService, TopicService: topicService}
+	services = &svcs.Container{
+		UserService:    userService,
+		TopicService:   topicService,
+		MessageService: messageService,
+	}
 }
 
 func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
@@ -50,7 +55,8 @@ func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
 func main() {
 
 	graphqlSchema, err := graphql.NewSchema(graphql.SchemaConfig{
-		Query: schema.RootQuery,
+		Query:    schema.RootQuery,
+		Mutation: schema.RootMutation,
 	})
 
 	if err != nil {
@@ -66,6 +72,6 @@ func main() {
 	})
 
 	http.Handle(gqlpath, h)
-	fmt.Printf("Access the web app via browser at http://localhost:%d%s", port, gqlpath)
+	fmt.Printf("Access the web app via browser at http://localhost:%d%s\n", port, gqlpath)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }

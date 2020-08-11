@@ -1,6 +1,8 @@
 package schema
 
 import (
+	"fmt"
+
 	"github.com/graphql-go/graphql"
 	"github.com/mrdulin/graphql-go-cnode/models"
 	"github.com/mrdulin/graphql-go-cnode/services"
@@ -8,8 +10,31 @@ import (
 )
 
 var UserBaseFields = graphql.Fields{
-	"loginname":  &graphql.Field{Type: graphql.String},
-	"avatar_url": &graphql.Field{Type: graphql.String},
+	"loginname": &graphql.Field{
+		Type: graphql.String,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			switch t := p.Source.(type) {
+			case *models.ValidateAccessTokenResponse:
+				return t.User.Loginname, nil
+			case *models.UserDetail:
+				return t.Loginname, nil
+			default:
+				return graphql.DefaultResolveFn(p)
+			}
+		}},
+	"avatar_url": &graphql.Field{
+		Type: graphql.String,
+		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
+			switch t := p.Source.(type) {
+			case *models.ValidateAccessTokenResponse:
+				return t.AvatarURL, nil
+			case *models.UserDetail:
+				return t.AvatarURL, nil
+			default:
+				return graphql.DefaultResolveFn(p)
+			}
+		},
+	},
 }
 
 var UserType = graphql.NewObject(graphql.ObjectConfig{
@@ -33,8 +58,7 @@ var AccessTokenValidationType = graphql.NewObject(graphql.ObjectConfig{
 	Name:        "AccessTokenValidation",
 	Description: "The response type for validating accessToken",
 	Fields: utils.MergeGraphqlFields(UserBaseFields, graphql.Fields{
-		"id":      &graphql.Field{Type: graphql.ID},
-		"success": &graphql.Field{Type: graphql.Boolean},
+		"id": &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
 	}),
 })
 
@@ -57,7 +81,8 @@ func AuthorResolver(p graphql.ResolveParams) (interface{}, error) {
 func AccessTokenValidationResolver(p graphql.ResolveParams) (interface{}, error) {
 	accessToken, ok := p.Args["accessToken"].(string)
 	if !ok {
-		return &models.AccessTokenValidation{}, nil
+		fmt.Println("resolver params 'accesstoken' type cast error. accesstoken: ", accessToken)
+		return &models.ValidateAccessTokenResponse{}, nil
 	}
 	rootValue := p.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)
