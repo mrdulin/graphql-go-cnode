@@ -76,6 +76,27 @@ var RecentTopicType = graphql.NewObject(graphql.ObjectConfig{
 	Fields:      TopicBaseFields,
 })
 
+var TopicQueryFields = graphql.Fields{
+	"topics": &graphql.Field{
+		Type: graphql.NewList(TopicType),
+		Args: graphql.FieldConfigArgument{
+			"page":     &graphql.ArgumentConfig{Type: graphql.Int},
+			"tab":      &graphql.ArgumentConfig{Type: TopicTabEnum},
+			"limit":    &graphql.ArgumentConfig{Type: graphql.Int},
+			"mdrender": &graphql.ArgumentConfig{Type: graphql.String},
+		},
+		Resolve: TopicsResolver,
+	},
+
+	"topic": &graphql.Field{
+		Type: TopicDetailType,
+		Args: graphql.FieldConfigArgument{
+			"id": &graphql.ArgumentConfig{Type: graphql.String},
+		},
+		Resolve: TopicResolver,
+	},
+}
+
 func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 	rootValue := params.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)

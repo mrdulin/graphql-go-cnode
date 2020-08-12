@@ -1,27 +1,30 @@
 package models
 
-import "github.com/mrdulin/graphql-go-cnode/utils"
-
 type MessageId struct {
-	ID string `json:"id"`
+	ID string `json:"id" mapstructure:"id"`
 }
 
 type Message struct {
-	MessageId
-	Type     string    `json:"type"`
-	HasRead  bool      `json:"has_read"`
-	Author   User      `json:"author"`
-	Topic    TopicBase `json:"topic"`
-	Reply    ReplyBase `json:"reply"`
-	CreateAt string    `json:create_at`
+	MessageId `mapstructure:",squash"`
+	Type      string    `json:"type"`
+	HasRead   bool      `json:"has_read" mapstructure:"has_read"`
+	Author    User      `json:"author"`
+	Topic     TopicBase `json:"topic"`
+	Reply     ReplyBase `json:"reply"`
+	CreateAt  string    `json:"create_at" mapstructure:"create_at"`
 }
 
-type Messages struct {
-	HasReadMessages    []Message `json:"has_read_messages"`
-	HasnotReadMessages []Message `json:"hasnot_read_messages"`
+type GetUnreadMessageCountResponse int
+
+type GetMessagesResponse struct {
+	HasReadMessages    []Message `json:"has_read_messages" mapstructure:"has_read_messages"`
+	HasnotReadMessages []Message `json:"hasnot_read_messages" mapstructure:"hasnot_read_messages"`
+}
+
+type MarkAllRequest struct {
+	AccessToken string `json:"accesstoken"`
 }
 
 type MarkAllMessagesResponse struct {
-	utils.ResponseStatus
 	MarkedMsgs []MessageId `json:"marked_msgs"`
 }

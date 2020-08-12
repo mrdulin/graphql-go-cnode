@@ -14,7 +14,7 @@ var UserBaseFields = graphql.Fields{
 		Type: graphql.String,
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			switch t := p.Source.(type) {
-			case *models.ValidateAccessTokenResponse:
+			case *models.UserEntity:
 				return t.User.Loginname, nil
 			case *models.UserDetail:
 				return t.Loginname, nil
@@ -26,8 +26,8 @@ var UserBaseFields = graphql.Fields{
 		Type: graphql.String,
 		Resolve: func(p graphql.ResolveParams) (interface{}, error) {
 			switch t := p.Source.(type) {
-			case *models.ValidateAccessTokenResponse:
-				return t.AvatarURL, nil
+			case *models.UserEntity:
+				return t.User.AvatarURL, nil
 			case *models.UserDetail:
 				return t.AvatarURL, nil
 			default:
@@ -62,6 +62,28 @@ var AccessTokenValidationType = graphql.NewObject(graphql.ObjectConfig{
 	}),
 })
 
+var UserQueryFields = graphql.Fields{
+	"user": &graphql.Field{
+		Type:        UserDetailType,
+		Description: "Get user detail by login name",
+		Args: graphql.FieldConfigArgument{
+			"loginname": &graphql.ArgumentConfig{Type: graphql.String},
+		},
+		Resolve: UserDetailResolver,
+	},
+}
+
+var UserMutationFields = graphql.Fields{
+	"validateAccessToken": &graphql.Field{
+		Type:        AccessTokenValidationType,
+		Description: "Validate accessToken",
+		Args: graphql.FieldConfigArgument{
+			"accessToken": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: AccessTokenValidationResolver,
+	},
+}
+
 func UserDetailResolver(params graphql.ResolveParams) (interface{}, error) {
 	rootValue := params.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)
@@ -82,7 +104,7 @@ func AccessTokenValidationResolver(p graphql.ResolveParams) (interface{}, error)
 	accessToken, ok := p.Args["accessToken"].(string)
 	if !ok {
 		fmt.Println("resolver params 'accesstoken' type cast error. accesstoken: ", accessToken)
-		return &models.ValidateAccessTokenResponse{}, nil
+		return &models.UserEntity{}, nil
 	}
 	rootValue := p.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)

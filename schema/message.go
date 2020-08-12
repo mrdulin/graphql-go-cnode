@@ -11,7 +11,9 @@ import (
 )
 
 var MessageIdField = graphql.Fields{
-	"id": &graphql.Field{Type: graphql.NewNonNull(graphql.ID)},
+	"id": &graphql.Field{
+		Type: graphql.NewNonNull(graphql.ID),
+	},
 }
 
 var MessageIdType = graphql.NewObject(graphql.ObjectConfig{
@@ -49,6 +51,38 @@ var MarkAllResponseType = graphql.NewObject(graphql.ObjectConfig{
 	},
 })
 
+var MessageQueryFields = graphql.Fields{
+	"messages": &graphql.Field{
+		Type:        MessagesType,
+		Description: "Contain unread and read messages",
+		Args: graphql.FieldConfigArgument{
+			"accessToken": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+			"mdrender":    &graphql.ArgumentConfig{Type: graphql.String, DefaultValue: "true"},
+		},
+		Resolve: MessagesResolver,
+	},
+
+	"MessageCount": &graphql.Field{
+		Type: graphql.Int,
+		Name: "Get total count of messages of an user",
+		Args: graphql.FieldConfigArgument{
+			"accessToken": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: MessageCountResolver,
+	},
+}
+
+var MessageMutationFields = graphql.Fields{
+	"markAllMessages": &graphql.Field{
+		Type:        MarkAllResponseType,
+		Description: "Mark all messages",
+		Args: graphql.FieldConfigArgument{
+			"accessToken": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.String)},
+		},
+		Resolve: MarkAllMessagesResolver,
+	},
+}
+
 func MessagesResolver(p graphql.ResolveParams) (interface{}, error) {
 	rootValue := p.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)
@@ -56,12 +90,12 @@ func MessagesResolver(p graphql.ResolveParams) (interface{}, error) {
 	accessToken, ok := p.Args["accessToken"].(string)
 	if !ok {
 		fmt.Println("resolver params 'accessToken' type cast error.")
-		return &models.Messages{}, nil
+		return &models.GetMessagesResponse{}, nil
 	}
 	mdrender, ok := p.Args["mdrender"].(string)
 	if !ok {
 		fmt.Println("resolver params 'mdrender' type cast error.")
-		return &models.Messages{}, nil
+		return &models.GetMessagesResponse{}, nil
 	}
 	return container.MessageService.GetMessages(accessToken, mdrender), nil
 }
@@ -76,3 +110,17 @@ func MarkAllMessagesResolver(p graphql.ResolveParams) (interface{}, error) {
 	}
 	return container.MessageService.MarkAll(accessToken), nil
 }
+
+func MessageCountResolver(p graphql.ResolveParams) (interface{}, error) {
+	return 0, nil
+}
+
+// If return type is interface{} for the method of MessageService, this resolver is unnecessary
+//func HasReadMessagesResolver(p graphql.ResolveParams) (interface{}, error) {
+//	source, ok := p.Source.(map[string]interface{})
+//	if !ok {
+//		fmt.Println("type cast p.Source.(*models.GetMessagesResponse) error in HasReadMessagesResolver")
+//		return models.GetMessagesResponse{}.HasReadMessages, nil
+//	}
+//	return source["has_read_messages"], nil
+//}

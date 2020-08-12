@@ -1,17 +1,12 @@
 package services
 
 import (
-	"encoding/json"
 	"fmt"
 	"net/url"
 
 	"github.com/mrdulin/graphql-go-cnode/models"
 	"github.com/mrdulin/graphql-go-cnode/utils"
 )
-
-type MarkAllRequest struct {
-	AccessToken string `json:"accesstoken"`
-}
 
 type messageService struct {
 	HttpClient utils.IHttpClient
@@ -20,7 +15,7 @@ type messageService struct {
 
 type MessageService interface {
 	GetMessages(accesstoken, mdrender string) interface{}
-	GetUnreadMessageCount(accesstoken string) interface{}
+	GetUnreadMessageCount(accesstoken string) models.GetUnreadMessageCountResponse
 	MarkAll(accesstoken string) *models.MarkAllMessagesResponse
 }
 
@@ -30,9 +25,10 @@ func NewMessageService(httpClient utils.IHttpClient, BaseURL string) *messageSer
 
 func (m *messageService) GetMessages(accesstoken, mdrender string) interface{} {
 	base, err := url.Parse(m.BaseURL + "/messages")
+	res := models.GetMessagesResponse{}
 	if err != nil {
-		fmt.Println("Get messages error. reason: parse url error.", err)
-		return &models.Messages{}
+		fmt.Println("Get messages error: parse url.", err)
+		return &res
 	}
 	urlValues := url.Values{}
 	urlValues.Add("accesstoken", accesstoken)
@@ -40,48 +36,29 @@ func (m *messageService) GetMessages(accesstoken, mdrender string) interface{} {
 	base.RawQuery = urlValues.Encode()
 	body, err := m.HttpClient.Get(base.String())
 	if err != nil {
-		fmt.Println("Get messages error. reason: HTTP request error.", err)
-		return &models.Messages{}
+		fmt.Println(err)
+		return &res
 	}
-	res := body.(utils.Response)
-	if !res.Success {
-		fmt.Println("Get messages error. reason: API error")
-		return &models.Messages{}
-	}
-	return res.Data
+	return body
 }
 
-func (m *messageService) GetUnreadMessageCount(accesstoken string) interface{} {
-	endpoint := m.BaseURL + "/messages?accesstoken=" + accesstoken
+func (m *messageService) GetUnreadMessageCount(accesstoken string) models.GetUnreadMessageCountResponse {
+	endpoint := m.BaseURL + "/message/count?accesstoken=" + accesstoken
 	body, err := m.HttpClient.Get(endpoint)
 	if err != nil {
-		fmt.Println("Get unread message")
+		fmt.Println(err)
 		return 0
 	}
-	res := body.(utils.Response)
-	if !res.Success {
-		fmt.Println("Get unread message count. reason: API error.")
-		return 0
-	}
-	return res.Data
+	return body.(models.GetUnreadMessageCountResponse)
 }
 
 func (m *messageService) MarkAll(accesstoken string) *models.MarkAllMessagesResponse {
 	endpoint := m.BaseURL + "/message/mark_all"
-	body, err := m.HttpClient.Post(endpoint, &MarkAllRequest{AccessToken: accesstoken})
+	body, err := m.HttpClient.Post(endpoint, &models.MarkAllRequest{AccessToken: accesstoken})
 	res := models.MarkAllMessagesResponse{}
 	if err != nil {
-		fmt.Println("Mark all messages error.", err)
+		fmt.Println(err)
 		return &res
 	}
-	err = json.Unmarshal(body, &res)
-	if err != nil {
-		fmt.Println("json.Unmarshal error.")
-		return &res
-	}
-	if !res.Success {
-		fmt.Println("Mark all messages count. reason: API error.")
-		return &res
-	}
-	return &res
+	return body.(*models.MarkAllMessagesResponse)
 }

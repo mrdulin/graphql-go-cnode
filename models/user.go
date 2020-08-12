@@ -1,22 +1,23 @@
 package models
 
-import "github.com/mrdulin/graphql-go-cnode/utils"
-
 type User struct {
 	Loginname string `json:"loginname"`
-	AvatarURL string `json:"avatar_url"`
+	AvatarURL string `json:"avatar_url" mapstructure:"avatar_url"`
 }
 
 type UserDetail struct {
-	User
+	User           `mapstructure:",squash"`
 	GithubUsername string        `json:"githubUsername"`
-	CreateAt       string        `json:"create_at"`
+	CreateAt       string        `json:"create_at" mapstructure:"create_at"`
 	Score          int           `json:"score"`
-	RecentTopics   []RecentTopic `json:"recent_topics"`
+	RecentTopics   []RecentTopic `json:"recent_topics" mapstructure:"recent_topics"`
 }
 
-type ValidateAccessTokenResponse struct {
-	utils.ResponseStatus
-	User
-	ID string `json:"id"`
+type UserEntity struct {
+	User `mapstructure:",squash"`
+	ID   string `json:"id"`
+}
+
+type ValidateAccessTokenRequest struct {
+	AccessToken string `json:"accesstoken"`
 }
