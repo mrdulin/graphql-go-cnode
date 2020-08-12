@@ -14,8 +14,6 @@ type Message struct {
 	CreateAt  string    `json:"create_at" mapstructure:"create_at"`
 }
 
-type GetUnreadMessageCountResponse int
-
 type GetMessagesResponse struct {
 	HasReadMessages    []Message `json:"has_read_messages" mapstructure:"has_read_messages"`
 	HasnotReadMessages []Message `json:"hasnot_read_messages" mapstructure:"hasnot_read_messages"`

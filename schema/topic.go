@@ -1,6 +1,7 @@
 package schema
 
 import (
+	"fmt"
 	"net/url"
 	"strconv"
 
@@ -91,7 +92,7 @@ var TopicQueryFields = graphql.Fields{
 	"topic": &graphql.Field{
 		Type: TopicDetailType,
 		Args: graphql.FieldConfigArgument{
-			"id": &graphql.ArgumentConfig{Type: graphql.String},
+			"id": &graphql.ArgumentConfig{Type: graphql.NewNonNull(graphql.ID)},
 		},
 		Resolve: TopicResolver,
 	},
@@ -120,9 +121,9 @@ func TopicsResolver(params graphql.ResolveParams) (interface{}, error) {
 func TopicResolver(params graphql.ResolveParams) (interface{}, error) {
 	rootValue := params.Info.RootValue.(map[string]interface{})
 	container := rootValue["services"].(*services.Container)
-	id, ok := params.Args["id"].(string)
-	if !ok {
-		return &models.TopicDetail{}, nil
+	id, _ := params.Args["id"].(string)
+	if id == "" {
+		return nil, fmt.Errorf("Topic id is required.")
 	}
 	return container.TopicService.GetTopicById(id), nil
 }

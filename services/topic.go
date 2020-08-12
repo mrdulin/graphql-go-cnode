@@ -14,34 +14,35 @@ type topicService struct {
 }
 
 type TopicService interface {
-	GetTopicsByPage(urlValues *url.Values) *[]models.Topic
-	GetTopicById(id string) *models.TopicDetail
+	GetTopicsByPage(urlValues *url.Values) interface{}
+	GetTopicById(id string) interface{}
 }
 
 func NewTopicService(httpClient *utils.HttpClient, BaseURL string) *topicService {
 	return &topicService{HttpClient: httpClient, BaseURL: BaseURL}
 }
-func (t *topicService) GetTopicsByPage(urlValues *url.Values) *[]models.Topic {
+func (t *topicService) GetTopicsByPage(urlValues *url.Values) interface{} {
 	base, err := url.Parse(t.BaseURL + "/topics")
+	res := []models.Topic{}
 	if err != nil {
-		fmt.Println("Get topics by page error. reason: parse url error.", err)
-		return &[]models.Topic{}
+		fmt.Println("Get topics by page error: parse url.", err)
+		return &res
 	}
 	base.RawQuery = urlValues.Encode()
 	body, err := t.HttpClient.Get(base.String())
 	if err != nil {
 		fmt.Println(err)
-		return &[]models.Topic{}
+		return &res
 	}
-	return body.(*[]models.Topic)
+	return body
 }
 
-func (t *topicService) GetTopicById(id string) *models.TopicDetail {
+func (t *topicService) GetTopicById(id string) interface{} {
 	endpoint := t.BaseURL + "/topic/" + id
 	body, err := t.HttpClient.Get(endpoint)
 	if err != nil {
 		fmt.Println(err)
-		return &models.TopicDetail{}
+		return body
 	}
-	return body.(*models.TopicDetail)
+	return body
 }

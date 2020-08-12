@@ -15,8 +15,8 @@ type messageService struct {
 
 type MessageService interface {
 	GetMessages(accesstoken, mdrender string) interface{}
-	GetUnreadMessageCount(accesstoken string) models.GetUnreadMessageCountResponse
-	MarkAll(accesstoken string) *models.MarkAllMessagesResponse
+	GetUnreadMessageCount(accesstoken string) interface{}
+	MarkAll(accesstoken string) interface{}
 }
 
 func NewMessageService(httpClient utils.IHttpClient, BaseURL string) *messageService {
@@ -42,17 +42,18 @@ func (m *messageService) GetMessages(accesstoken, mdrender string) interface{} {
 	return body
 }
 
-func (m *messageService) GetUnreadMessageCount(accesstoken string) models.GetUnreadMessageCountResponse {
+func (m *messageService) GetUnreadMessageCount(accesstoken string) interface{} {
 	endpoint := m.BaseURL + "/message/count?accesstoken=" + accesstoken
 	body, err := m.HttpClient.Get(endpoint)
+	var count int
 	if err != nil {
 		fmt.Println(err)
-		return 0
+		return count
 	}
-	return body.(models.GetUnreadMessageCountResponse)
+	return body
 }
 
-func (m *messageService) MarkAll(accesstoken string) *models.MarkAllMessagesResponse {
+func (m *messageService) MarkAll(accesstoken string) interface{} {
 	endpoint := m.BaseURL + "/message/mark_all"
 	body, err := m.HttpClient.Post(endpoint, &models.MarkAllRequest{AccessToken: accesstoken})
 	res := models.MarkAllMessagesResponse{}
@@ -60,5 +61,5 @@ func (m *messageService) MarkAll(accesstoken string) *models.MarkAllMessagesResp
 		fmt.Println(err)
 		return &res
 	}
-	return body.(*models.MarkAllMessagesResponse)
+	return body
 }

@@ -13,15 +13,15 @@ type userService struct {
 }
 
 type UserService interface {
-	GetUserDetailByLoginname(name string) *models.UserDetail
-	ValidateAccessToken(token string) *models.UserEntity
+	GetUserDetailByLoginname(name string) interface{}
+	ValidateAccessToken(token string) interface{}
 }
 
 func NewUserService(httpClient utils.IHttpClient, BaseURL string) *userService {
 	return &userService{HttpClient: httpClient, BaseURL: BaseURL}
 }
 
-func (u *userService) GetUserDetailByLoginname(name string) *models.UserDetail {
+func (u *userService) GetUserDetailByLoginname(name string) interface{} {
 	url := u.BaseURL + "/user/" + name
 	body, err := u.HttpClient.Get(url)
 	userDetail := models.UserDetail{}
@@ -29,11 +29,10 @@ func (u *userService) GetUserDetailByLoginname(name string) *models.UserDetail {
 		fmt.Println(err)
 		return &userDetail
 	}
-	u.HttpClient.Decode(body, &userDetail)
-	return &userDetail
+	return body
 }
 
-func (u *userService) ValidateAccessToken(token string) *models.UserEntity {
+func (u *userService) ValidateAccessToken(token string) interface{} {
 	url := u.BaseURL + "/accesstoken"
 	body, err := u.HttpClient.Post(url, &models.ValidateAccessTokenRequest{AccessToken: token})
 	userEntity := models.UserEntity{}
@@ -41,6 +40,5 @@ func (u *userService) ValidateAccessToken(token string) *models.UserEntity {
 		fmt.Println(err)
 		return &userEntity
 	}
-	u.HttpClient.Decode(body, &userEntity)
-	return &userEntity
+	return body
 }
