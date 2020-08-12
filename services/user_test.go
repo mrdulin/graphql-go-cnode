@@ -6,7 +6,6 @@ import (
 
 	"github.com/mrdulin/graphql-go-cnode/mocks"
 	"github.com/mrdulin/graphql-go-cnode/services"
-	"github.com/mrdulin/graphql-go-cnode/utils"
 )
 
 func TestUserService_GetUserDetailByLoginname(t *testing.T) {
@@ -17,8 +16,7 @@ func TestUserService_GetUserDetailByLoginname(t *testing.T) {
 		data := map[string]interface{}{
 			"loginname": "mrdulin",
 		}
-		response := utils.Response{utils.ResponseStatus{Success: true}, utils.ResponseData{Data: data}}
-		testHttpClient.On("Get", apiurl+"/user/mrdulin").Return(response, nil)
+		testHttpClient.On("Get", apiurl+"/user/mrdulin").Return(data, nil)
 		userService := services.NewUserService(testHttpClient, apiurl)
 		got := userService.GetUserDetailByLoginname("mrdulin")
 		want := map[string]interface{}{"loginname": "mrdulin"}
