@@ -1,5 +1,7 @@
 # graphql-go-cnode
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/mrdulin/graphql-go-cnode)](https://goreportcard.com/report/github.com/mrdulin/graphql-go-cnode)
+
 A GraphQL APIs for https://cnodejs.org community built with [graphql-go](https://github.com/graphql-go/graphql) package.
 
 ### Environment variables
