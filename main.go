@@ -1,20 +1,16 @@
 package main
 
 import (
-	"context"
 	"fmt"
 	"log"
 	"net/http"
 	"strconv"
 
 	"github.com/joho/godotenv"
-
+	"github.com/mrdulin/graphql-go-cnode/controllers"
+	"github.com/mrdulin/graphql-go-cnode/schema"
 	svcs "github.com/mrdulin/graphql-go-cnode/services"
 	"github.com/mrdulin/graphql-go-cnode/utils"
-
-	"github.com/graphql-go/graphql"
-	"github.com/graphql-go/handler"
-	"github.com/mrdulin/graphql-go-cnode/schema"
 )
 
 var (
@@ -44,34 +40,19 @@ func init() {
 	}
 }
 
-func RootObjectFn(ctx context.Context, r *http.Request) map[string]interface{} {
-	auth := r.Header.Get("authorization")
-	return map[string]interface{}{
-		"auth":     auth,
-		"services": services,
-	}
-}
-
 func main() {
 
-	graphqlSchema, err := graphql.NewSchema(graphql.SchemaConfig{
-		Query:    schema.RootQuery,
-		Mutation: schema.RootMutation,
-	})
+	rootObjectFn := controllers.NewRootObjectFn(services)
+	graphqlHandler := controllers.NewGraphqlHandler(
+		controllers.GraphqlHandlerOptions{
+			Query:        schema.RootQuery,
+			Mutation:     schema.RootMutation,
+			RootObjectFn: rootObjectFn,
+			Services:     services,
+		},
+	)
 
-	if err != nil {
-		log.Fatalln(err)
-	}
-
-	h := handler.New(&handler.Config{
-		Schema:       &graphqlSchema,
-		Pretty:       true,
-		GraphiQL:     false,
-		Playground:   true,
-		RootObjectFn: RootObjectFn,
-	})
-
-	http.Handle(gqlpath, h)
+	http.Handle(gqlpath, graphqlHandler)
 	fmt.Printf("Access the web app via browser at http://localhost:%d%s\n", port, gqlpath)
 	log.Fatal(http.ListenAndServe(fmt.Sprintf(":%d", port), nil))
 }

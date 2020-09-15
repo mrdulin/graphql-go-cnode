@@ -2,7 +2,10 @@
 
 A GraphQL APIs for https://cnodejs.org community built with [graphql-go](https://github.com/graphql-go/graphql) package.
 
-### Environment variables:
+### Environment variables
+
+Put following environment variables into `.env` file
+
 ```
 API_BASE_URL=https://cnodejs.org/api/v1
 GRAPHQL_PATH=/graphql
